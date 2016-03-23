@@ -1,6 +1,6 @@
 {
   "name": "parserss",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Small RSS Parser",
   "main": "index.js",
   "scripts": {
@@ -12,11 +12,12 @@
     "parse",
     "parser"
   ],
-  "author": "Jose Luis Rivas <me@ghostbar.co>",
+  "author": "Can Erdogan <can@canerdogan.net>",
   "license": "MIT",
   "dependencies": {
     "feedparser": "~0.16.6",
-    "request": "~2.36.0"
+    "request": "~2.36.0",
+    "iconv":"2.0.7"
   },
   "devDependencies": {
     "gulp": "^3.8.6",
@@ -29,10 +30,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/ghostbar/parserss.git"
+    "url": "git://github.com/canerdogan/parserss.git"
   },
   "bugs": {
-    "url": "https://github.com/ghostbar/parserss/issues"
+    "url": "https://github.com/canerdogan/parserss/issues"
   },
-  "homepage": "https://github.com/ghostbar/parserss"
+  "homepage": "https://github.com/canerdogan/parserss"
 }

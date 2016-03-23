@@ -43,16 +43,31 @@ function parse (src, max, callback) {
 
 function getUrl (url, max, callback) {
   var request = require('request');
+  var Iconv = require('iconv').Iconv;
+
   var req = request({
     method: 'GET',
     uri: url
   });
 
   req.on('response', function (response) {
-    var stream = this;
+    var stream = this
+        , iconv
+        , charset;
 
-    if (response.statusCode !== 200) 
+    if (response.statusCode !== 200)
       return this.emit('error', new Error('Bad status code'));
+
+    charset = getParams(res.headers['content-type'] || '').charset;
+    if (!iconv && charset && !/utf-*8/i.test(charset)) {
+        try {
+            iconv = new Iconv(charset, 'utf-8');
+            iconv.on('error', done);
+            stream = this.pipe(iconv);
+        } catch(err) {
+            this.emit('error', err);
+        }
+    }
 
     parse(stream, max, callback);
   });
