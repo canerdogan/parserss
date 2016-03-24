@@ -1,8 +1,10 @@
 
-0.3.0 / 2016-03-23
+1.0.0 / 2016-03-24
 ==================
 
- * Charset encoding fixes
+ * Rewrote all code.
+ * Charset encoding fixes.
+ * New version of feedparser and iconv used.
 
 0.2.0 / 2014-06-18
 ==================
