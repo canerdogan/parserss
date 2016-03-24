@@ -1,6 +1,9 @@
 'use strict';
 
 var FeedParser = require('feedparser');
+var fs = require('fs');
+var request = require('request');
+var Iconv = require('iconv').Iconv;
 
 function parse (src, max, callback) {
   var parser = new FeedParser();
@@ -8,7 +11,7 @@ function parse (src, max, callback) {
 
   src.pipe(parser);
 
-  if (max == null)
+  if (max === null)
     max = 10;
 
   var res = {
@@ -25,7 +28,7 @@ function parse (src, max, callback) {
     res.meta = this.meta;
     var item;
 
-    while (item = stream.read()) {
+    while ((item = stream.read())) {
       c += 1;
       if (c <= max || max === 0)
         res.articles.push(item);
@@ -42,9 +45,6 @@ function parse (src, max, callback) {
 }
 
 function getUrl (url, max, callback) {
-  var request = require('request');
-  var Iconv = require('iconv').Iconv;
-
   var req = request({
     method: 'GET',
     uri: url
@@ -78,7 +78,7 @@ function getUrl (url, max, callback) {
 }
 
 function getFile (path, max, callback) {
-  var file = require('fs').createReadStream(path);
+  var file = fs.createReadStream(path);
   parse(file, max, callback);
 }
 
