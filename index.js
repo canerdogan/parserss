@@ -1,88 +1,99 @@
 'use strict';
 
-var FeedParser = require('feedparser');
+var request = require('request'),
+    FeedParser = require('feedparser'),
+    Iconv = require('iconv').Iconv;
 
-function parse (src, max, callback) {
-  var parser = new FeedParser();
-  var c = 0;
+function fetch(feed, callback) {
+    // Define our streams
+    var req = request(feed, {
+        timeout: 10000,
+        pool: false
+    });
+    req.setMaxListeners(50);
+    // Some feeds do not respond without user-agent and accept headers.
+    req.setHeader('user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36');
+    req.setHeader('accept', 'text/html,application/xhtml+xml');
 
-  src.pipe(parser);
+    var feedparser = new FeedParser();
 
-  if (max == null)
-    max = 10;
+    var result = {
+        meta: {},
+        articles: []
+    };
 
-  var res = {
-    meta: {},
-    articles: []
-  };
+    // Define our handlers
+    req.on('error', function(err) {
+        console.log('I got request error!');
+        return callback(err);
+    });
 
-  parser.on('error', function (err) {
-    return callback(err);
-  });
+    req.on('response', function(res) {
+        if (res.statusCode != 200)
+            return this.emit('error', new Error('Bad status code'));
+        var charset = getParams(res.headers['content-type'] || '').charset;
 
-  parser.on('readable', function () {
-    var stream = this;
-    res.meta = this.meta;
-    var item;
+        console.log('Charset is:', charset);
+        res = maybeTranslate(res, charset);
+        // And boom goes the dynamite
+        res.pipe(feedparser);
+    });
 
-    while (item = stream.read()) {
-      c += 1;
-      if (c <= max || max === 0)
-        res.articles.push(item);
-    }
-
-    if (c === max && max !== 0)
-      return callback(null, res);
-  });
-
-  parser.on('end', function () {
-    if (c <= max && max !== 0)
-      return callback(null, res);
-  });
+    feedparser.on('error', function(err) {
+        console.log('I got parser error!');
+        return callback(err);
+    });
+    feedparser.on('end', function() {
+        console.log('End called!');
+        return callback(null, result);
+    });
+    feedparser.on('readable', function() {
+        result.meta = this.meta;
+        var post;
+        while (post = this.read()) {
+            // console.log(JSON.stringify(post, ' ', 4));
+            result.articles.push(post);
+        }
+        // console.log('result sending!');
+        // return callback(null, result);
+    });
 }
 
-function getUrl (url, max, callback) {
-  var request = require('request');
-  var Iconv = require('iconv').Iconv;
-
-  var req = request({
-    method: 'GET',
-    uri: url
-  });
-
-  req.on('response', function (response) {
-    var stream = this
-        , iconv
-        , charset;
-
-    if (response.statusCode !== 200)
-      return this.emit('error', new Error('Bad status code'));
-
-    charset = getParams(res.headers['content-type'] || '').charset;
+function maybeTranslate(res, charset) {
+    var iconv;
+    // Use iconv if its not utf8 already.
     if (!iconv && charset && !/utf-*8/i.test(charset)) {
         try {
             iconv = new Iconv(charset, 'utf-8');
+            console.log('Converting from charset %s to utf-8', charset);
             iconv.on('error', done);
-            stream = this.pipe(iconv);
-        } catch(err) {
-            this.emit('error', err);
+            // If we're using iconv, stream will be the output of iconv
+            // otherwise it will remain the output of request
+            res = res.pipe(iconv);
+        } catch (err) {
+            res.emit('error', err);
         }
     }
-
-    parse(stream, max, callback);
-  });
-
-  req.on('error', function (err) {
-    return callback(err);
-  });
+    return res;
 }
 
-function getFile (path, max, callback) {
-  var file = require('fs').createReadStream(path);
-  parse(file, max, callback);
+function getParams(str) {
+    var params = str.split(';').reduce(function(params, param) {
+        var parts = param.split('=').map(function(part) {
+            return part.trim();
+        });
+        if (parts.length === 2) {
+            params[parts[0]] = parts[1];
+        }
+        return params;
+    }, {});
+    return params;
 }
 
-module.exports = getUrl;
-module.exports.parse = parse;
-module.exports.getUrl = getUrl;
-module.exports.getFile = getFile;
+function done(err) {
+    if (err) {
+        console.log(err, err.stack);
+    }
+}
+
+module.exports = fetch;

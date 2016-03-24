@@ -13,7 +13,7 @@ Usage
 
     var rss = require('parserss');
 
-    rss('http://domain.tld/file.xml', 10, function (err, res) {
+    rss('http://domain.tld/file.xml', function (err, res) {
       console.log(err);
       console.log(res);
     });

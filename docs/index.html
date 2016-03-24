@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>index.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="public/stylesheets/normalize.css" />
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="page">
+
+      <div class="header">
+        
+          <h1>index.js</h1>
+        
+
+        
+      </div>
+
+      
+        
+        
+        
+          <div class='highlight'><pre><span class="hljs-meta">'use strict'</span>;
+
+<span class="hljs-keyword">var</span> request = <span class="hljs-built_in">require</span>(<span class="hljs-string">'request'</span>),
+    FeedParser = <span class="hljs-built_in">require</span>(<span class="hljs-string">'feedparser'</span>),
+    Iconv = <span class="hljs-built_in">require</span>(<span class="hljs-string">'iconv'</span>).Iconv;
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fetch</span>(<span class="hljs-params">feed, callback</span>) </span>{</pre></div>
+        
+      
+        
+        <p>Define our streams</p>
+
+        
+          <div class='highlight'><pre>    <span class="hljs-keyword">var</span> req = request(feed, {
+        timeout: <span class="hljs-number">10000</span>,
+        pool: <span class="hljs-literal">false</span>
+    });
+    req.setMaxListeners(<span class="hljs-number">50</span>);</pre></div>
+        
+      
+        
+        <p>Some feeds do not respond without user-agent and accept headers.</p>
+
+        
+          <div class='highlight'><pre>    req.setHeader(<span class="hljs-string">'user-agent'</span>, <span class="hljs-string">'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'</span>);
+    req.setHeader(<span class="hljs-string">'accept'</span>, <span class="hljs-string">'text/html,application/xhtml+xml'</span>);
+
+    <span class="hljs-keyword">var</span> feedparser = <span class="hljs-keyword">new</span> FeedParser();
+
+    <span class="hljs-keyword">var</span> result = {
+        meta: {},
+        articles: []
+    };</pre></div>
+        
+      
+        
+        <p>Define our handlers</p>
+
+        
+          <div class='highlight'><pre>    req.on(<span class="hljs-string">'error'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>) </span>{
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'I got request error!'</span>);
+        <span class="hljs-keyword">return</span> callback(err);
+    });
+
+    req.on(<span class="hljs-string">'response'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">res</span>) </span>{
+        <span class="hljs-keyword">if</span> (res.statusCode != <span class="hljs-number">200</span>)
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.emit(<span class="hljs-string">'error'</span>, <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Bad status code'</span>));
+        <span class="hljs-keyword">var</span> charset = getParams(res.headers[<span class="hljs-string">'content-type'</span>] || <span class="hljs-string">''</span>).charset;
+
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Charset is:'</span>, charset);
+        res = maybeTranslate(res, charset);</pre></div>
+        
+      
+        
+        <p>And boom goes the dynamite</p>
+
+        
+          <div class='highlight'><pre>        res.pipe(feedparser);
+    });
+
+    feedparser.on(<span class="hljs-string">'error'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>) </span>{
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'I got parser error!'</span>);
+        <span class="hljs-keyword">return</span> callback(err);
+    });
+    feedparser.on(<span class="hljs-string">'end'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+        <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'End called!'</span>);
+        <span class="hljs-keyword">return</span> callback(<span class="hljs-literal">null</span>, result);
+    });
+    feedparser.on(<span class="hljs-string">'readable'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+        result.meta = <span class="hljs-keyword">this</span>.meta;
+        <span class="hljs-keyword">var</span> post;
+        <span class="hljs-keyword">while</span> (post = <span class="hljs-keyword">this</span>.read()) {</pre></div>
+        
+      
+        
+        <p>console.log(JSON.stringify(post, ‘ ‘, 4));</p>
+
+        
+          <div class='highlight'><pre>            result.articles.push(post);
+        }</pre></div>
+        
+      
+        
+        <p>console.log(‘result sending!’);
+return callback(null, result);</p>
+
+        
+          <div class='highlight'><pre>    });
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">maybeTranslate</span>(<span class="hljs-params">res, charset</span>) </span>{
+    <span class="hljs-keyword">var</span> iconv;</pre></div>
+        
+      
+        
+        <p>Use iconv if its not utf8 already.</p>
+
+        
+          <div class='highlight'><pre>    <span class="hljs-keyword">if</span> (!iconv &amp;&amp; charset &amp;&amp; !<span class="hljs-regexp">/utf-*8/i</span>.test(charset)) {
+        <span class="hljs-keyword">try</span> {
+            iconv = <span class="hljs-keyword">new</span> Iconv(charset, <span class="hljs-string">'utf-8'</span>);
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Converting from charset %s to utf-8'</span>, charset);
+            iconv.on(<span class="hljs-string">'error'</span>, done);</pre></div>
+        
+      
+        
+        <p>If we’re using iconv, stream will be the output of iconv
+otherwise it will remain the output of request</p>
+
+        
+          <div class='highlight'><pre>            res = res.pipe(iconv);
+        } <span class="hljs-keyword">catch</span> (err) {
+            res.emit(<span class="hljs-string">'error'</span>, err);
+        }
+    }
+    <span class="hljs-keyword">return</span> res;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getParams</span>(<span class="hljs-params">str</span>) </span>{
+    <span class="hljs-keyword">var</span> params = str.split(<span class="hljs-string">';'</span>).reduce(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">params, param</span>) </span>{
+        <span class="hljs-keyword">var</span> parts = param.split(<span class="hljs-string">'='</span>).map(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">part</span>) </span>{
+            <span class="hljs-keyword">return</span> part.trim();
+        });
+        <span class="hljs-keyword">if</span> (parts.length === <span class="hljs-number">2</span>) {
+            params[parts[<span class="hljs-number">0</span>]] = parts[<span class="hljs-number">1</span>];
+        }
+        <span class="hljs-keyword">return</span> params;
+    }, {});
+    <span class="hljs-keyword">return</span> params;
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">done</span>(<span class="hljs-params">err</span>) </span>{
+    <span class="hljs-keyword">if</span> (err) {
+        <span class="hljs-built_in">console</span>.log(err, err.stack);
+    }
+}
+
+<span class="hljs-built_in">module</span>.exports = fetch;</pre></div>
+        
+      
+      <div class="fleur">h</div>
+    </div>
+  </div>
+</body>
+</html>

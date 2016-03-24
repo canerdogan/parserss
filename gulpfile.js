@@ -20,9 +20,9 @@ var opts = {
 
 gulp.task('test', ['test-nonet']);
 
-gulp.task('test-all', ['test-nonet', 'test-net']);
+gulp.task('test-all', ['test-net']);
 
-gulp.task('default', ['test', 'watch']);
+gulp.task('default', ['test-all', 'watch']);
 
 gulp.task('test-nonet', function () {
   return gulp
@@ -37,7 +37,7 @@ gulp.task('test-net', function () {
 });
 
 gulp.task('watch', function () {
-  var watcher = gulp.watch(['index.js', 'lib/**', 'test/**'], ['test']);
+  var watcher = gulp.watch(['index.js', 'lib/**', 'test/**'], ['test-all']);
   watcher.on('change', function(event) {
       console.log('File '+event.path+' was '+event.type+', running tasks...');
   });
@@ -71,7 +71,7 @@ gulp.task('publish-docs', function () {
 gulp.task('docs', ['clean-docs', 'make-docs', 'publish-docs']);
 
 gulp.task('push', function (cb) {
-  exec('git push github --all; git push github --tags; git push bitbucket --all; git push bitbucket --tags', function (err) {
+  exec('git push --all; git push --tags;', function (err) {
     cb(err);
   });
 });
