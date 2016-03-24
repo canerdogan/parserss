@@ -1,7 +1,8 @@
-parserss [![Build Status](https://secure.travis-ci.org/ghostbar/parserss.png)](http://travis-ci.org/ghostbar/parserss) [![Code Climate](https://codeclimate.com/github/ghostbar/parserss/badges/gpa.svg)](https://codeclimate.com/github/ghostbar/parserss)
+parserss [![Build Status](https://secure.travis-ci.org/canerdogan/parserss.png)](http://travis-ci.org/canerdogan/parserss) [![Code Climate](https://codeclimate.com/github/canerdogan/parserss/badges/gpa.svg)](https://codeclimate.com/github/canerdogan/parserss)
 ========
 
 Small RSS parser for mere convenience, using `feedparser` and `request`.
+Based on [ghostbar/parserss](https://github.com/ghostbar/parserss)
 
 It should work for Atom as well.
 
@@ -11,7 +12,7 @@ Usage
 -----
 
     var rss = require('parserss');
-    
+
     rss('http://domain.tld/file.xml', 10, function (err, res) {
       console.log(err);
       console.log(res);
@@ -32,7 +33,7 @@ Just run `npm test`.
 
 Author
 ------
-© 2014, Jose Luis Rivas `<me@ghostbar.co>`
+© 2016, Can Erdogan <canerdogan.net>
 
 License
 -------

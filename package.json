@@ -17,7 +17,7 @@
   "dependencies": {
     "feedparser": "~0.16.6",
     "request": "~2.36.0",
-    "iconv":"2.0.7"
+    "iconv":"~2.1.11"
   },
   "devDependencies": {
     "gulp": "^3.8.6",
